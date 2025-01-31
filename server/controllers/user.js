@@ -1,5 +1,6 @@
 const User = require('../models/user')
 const asyncHandler = require('express-async-handler')
+const {generateAccessToken, generateRefreshToken} = require('../middlewares/jwt')
 
 const register = asyncHandler(async (req, res) => {
     const {email, password, firstname, lastname} = req.body
@@ -27,10 +28,15 @@ const login = asyncHandler(async (req, res) => {
     const response = await User.findOne({email})
     const isCorrectPassword = await response.isCorrectPassword(password)
     if(isCorrectPassword && response) {
-        const {role, password, ...date} = response.toObject()
+        const {role, password, ...data} = response.toObject()
+        const accessToken = generateAccessToken(response._id, role)
+        const refreshToken = generateRefreshToken(response._id)
+        await User.findByIdAndUpdate(response._id, {refreshToken}, {new: true})
+        res.cookie('refreshToken', refreshToken, {httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000})
         return res.json({
             success: true,
-            mes: date
+            accessToken,
+            mes: data
         })
     }else{
         throw new Error('Invalid credentials!')
@@ -38,8 +44,18 @@ const login = asyncHandler(async (req, res) => {
 
 })
 
+const getOne = asyncHandler(async (req, res) => {
+    const {_id} = req.user
+    const user = await User.findById(_id).select('-refreshToken -role -password')
+    return res.json({
+        success: true,
+        user
+    })
+})
+ 
 
 module.exports = {
     register,
-    login
+    login,
+    getOne
 }
