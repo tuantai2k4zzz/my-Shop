@@ -4,6 +4,8 @@ const {generateAccessToken, generateRefreshToken} = require('../middlewares/jwt'
 const jwt = require('jsonwebtoken')
 const sendMail = require('../ultil/sendmail')
 const crypto = require('crypto')
+const bcrypt = require('bcrypt')
+const mongoose = require("mongoose")
 
 const register = asyncHandler(async (req, res) => {
     const {email, password, firstname, lastname} = req.body
@@ -28,7 +30,8 @@ const login = asyncHandler(async (req, res) => {
         mes: "Missing input!"
     })
 
-    const response = await User.findOne({email})
+    const response = await User.findOne({email}).select('-refreshToken')
+    if(!response) throw new Error('User not found!')
     const isCorrectPassword = await response.isCorrectPassword(password)
     if(isCorrectPassword && response) {
         const {role, password, ...data} = response.toObject()
@@ -124,6 +127,51 @@ const resetPassword = asyncHandler(async (req, res) => {
         mes: user ? 'Update password successfully' : 'Something went wrong!'
     })
 })
+
+const getUsers = asyncHandler(async (req, res) => {
+    const response = await User.find()
+    return res.json({
+        success: response ? true : false,
+        users: response
+    })
+})
+
+const deleteUser = asyncHandler(async (req, res) => {
+    const {_id} = req.query
+    if(!_id) throw new Error('Missing input')
+    const response = await User.findByIdAndDelete(_id)
+    return res.json({
+        success: response ? true : false,
+        mes: response ? `user with id:${_id} is deleted!` : 'Cannot find user'
+    })
+})
+const updateUser = asyncHandler(async (req, res) => {
+    const {_id} = req.user
+    if(!_id || Object.keys(req.body).length === 0) throw new Error('Missing input')
+    if (req.body.password) {
+        const salt = bcrypt.genSaltSync(10);
+        req.body.password = await bcrypt.hash(req.body.password, salt);
+    }
+    const response = await User.findByIdAndUpdate(_id, req.body, {new: true})
+    response.save()
+    return res.json({
+        success: response ? true : false,
+        mes : response ? response : "Something went wrong!"
+    })
+})
+const updateUserByAdmin = asyncHandler(async (req, res) => {
+    const {uid} = req.params
+    if(Object.keys(req.body).length === 0) throw new Error('Missing input')
+    if (req.body.password) {
+        const salt = bcrypt.genSaltSync(10);
+        req.body.password = await bcrypt.hash(req.body.password, salt);
+    }
+    const response = await User.findByIdAndUpdate(uid, req.body, {new: true})
+    return res.json({
+        success: response ? true : false,
+        mes : response ? response : "Something went wrong!"
+    })
+})
 module.exports = {
     register,
     login,
@@ -131,5 +179,9 @@ module.exports = {
     refreshAccessToken,
     logout,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    getUsers,
+    deleteUser,
+    updateUser,
+    updateUserByAdmin
 }
