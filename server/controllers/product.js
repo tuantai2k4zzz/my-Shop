@@ -22,12 +22,28 @@ const getProduct = asyncHandler(async (req, res) => {
 })
 
 const getProducts = asyncHandler(async (req, res) => {
-    const products = await Product.find()
+    const queries = { ...req.query };
+    const excludeFields = ['limit', 'sort', 'page', 'fields'];
+    excludeFields.forEach(el => delete queries[el]);
+    let queryString = JSON.stringify(queries);
+    queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, (el) => `$${el}`);
+    const formateQueries = JSON.parse(queryString);
+    if (queries?.title) formateQueries.title = { $regex: queries.title, $options: 'i' };
+    let queryCommandFake = Product.find(formateQueries);
+    if (req.query.sort) {
+        const sortBy = req.query.sort.split(',').join(' ')
+        queryCommandFake = queryCommandFake.sort(sortBy)
+    }
+    const queryCommandReal = await queryCommandFake; // Thực thi truy vấn
+    console.log(queryCommandReal);
+    const count = await Product.countDocuments(formateQueries); // Đếm số kết quả khớp
     return res.json({
-        success: products ? true : false,
-        product: products ? products : 'Cannot get product'
-    })
-})
+        success: queryCommandReal ? true : false,
+        product: queryCommandReal ? queryCommandReal : 'Cannot get product',
+        count,
+    });
+});
+
 const updateProduct = asyncHandler(async (req, res) => {
     const {pid} = req.params
     if(Object.keys(req.body).length === 0) throw new Error('Missing inputs')
