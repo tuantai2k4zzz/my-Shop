@@ -32,7 +32,7 @@ var blogSchema = new mongoose.Schema({
     dislikes:[
         {type: mongoose.Types.ObjectId, ref: 'User'}
     ],
-    images: {
+    image: {
         type: String,
         default: 'https://st2.depositphotos.com/1006899/8421/i/450/depositphotos_84219350-stock-photo-word-blog-suspended-by-ropes.jpg'
     },

@@ -13,6 +13,8 @@ router.get('/getUsers', [verifyAccessToken, isAdmin], ctrl.getUsers)
 router.delete('/deleteUser', [verifyAccessToken, isAdmin], ctrl.deleteUser)
 router.put('/updateUser', verifyAccessToken, ctrl.updateUser)
 router.put('/updateUserByAdmin/:uid', [verifyAccessToken, isAdmin], ctrl.updateUserByAdmin)
+router.put('/updateUserAddress', verifyAccessToken, ctrl.updateUserAddress)
+router.put('/updateCart', verifyAccessToken, ctrl.updateCart)
 
 
 

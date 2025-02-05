@@ -6,6 +6,7 @@ const sendMail = require('../ultil/sendmail')
 const crypto = require('crypto')
 const bcrypt = require('bcrypt')
 const mongoose = require("mongoose")
+const product = require('../models/product')
 
 const register = asyncHandler(async (req, res) => {
     const {email, password, firstname, lastname} = req.body
@@ -172,6 +173,60 @@ const updateUserByAdmin = asyncHandler(async (req, res) => {
         mes : response ? response : "Something went wrong!"
     })
 })
+const updateUserAddress = asyncHandler(async (req, res) => {
+    const {_id} = req.user;
+    const user = await User.findById(_id);
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            mes: "User not found"
+        });
+    }
+    const oldAddress = user.address && user.address.some(el => el === req.body.address);
+    if (oldAddress) {
+        throw new Error('Your address is already there');
+    }
+    if (!req.body.address) {
+        throw new Error('Missing inputs');
+    }
+    const response = await User.findByIdAndUpdate(_id, {$push: {address: req.body.address}}, {new: true});
+    return res.json({
+        success: response ? true : false,
+        mes: response ? response : "Update user something went wrong!"
+    });
+});
+// Logic giỏ hàng 
+const updateCart = asyncHandler(async (req, res) => {
+    const {_id} = req.user
+    const {pid, quantity, color} = req.body
+    if(!pid || !quantity || !color) throw new Error('Missing inputs')
+    const user = await User.findById(_id).select('cart')
+    const alreadyProduct = user?.cart.find(el => el.product.toString() === pid)
+    console.log(user);
+    if(alreadyProduct) {
+        const alReadyColor = user?.cart.find(el => el.color === color)
+        if(alReadyColor) {
+            const response = await User.updateOne({_id, 'cart.product': pid, 'cart.color': color}, {$inc: {'cart.$.quantity': quantity}}, {new: true})
+            return res.status(200).json({
+                success: response ? true : false,
+                cart: response ? response : "Cannot update cart"
+            })
+        } else {
+            const response = await User.findByIdAndUpdate(_id, {$push: {cart: {product: pid, quantity, color}}}, {new: true})
+        return res.status(200).json({
+            success: response ? true : false,
+            cart: response ? response : "Cannot update cart"
+        })
+        }
+        
+    } else {
+        const response = await User.findByIdAndUpdate(_id, {$push: {cart: {product: pid, quantity, color}}}, {new: true})
+        return res.status(200).json({
+            success: response ? true : false,
+            cart: response ? response : "Cannot update cart"
+        })
+    }
+})
 module.exports = {
     register,
     login,
@@ -183,5 +238,7 @@ module.exports = {
     getUsers,
     deleteUser,
     updateUser,
-    updateUserByAdmin
+    updateUserByAdmin,
+    updateUserAddress,
+    updateCart
 }
