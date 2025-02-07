@@ -1,0 +1,3 @@
+###
+# POST http://localhost:5000/api/insertProduct
+POST http://localhost:5000/api/insert/insertCategory
