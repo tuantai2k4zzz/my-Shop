@@ -3,12 +3,12 @@ import logo from '../assets/logo1.png'
 import icons from '../ultils/icons'
 import { Link } from 'react-router-dom'
 import path from '../ultils/path'
+const {MdPhone, MdEmail, IoBagSharp, FaRegUserCircle} = icons
 
 const Header = () => {
-  const {MdPhone, MdEmail, IoBagSharp, FaRegUserCircle} = icons
   return (
-    <div className='border w-main h-[110px] py-[35px] flex justify-between items-center'>
-      <Link to={path.HOME}>
+    <div className='w-main h-[110px] py-[35px] flex justify-between items-center'>
+      <Link to={`/${path.HOME}`}>
         <img src={logo} alt="logo DIGITAL WORLD" className='w-[234px] object-contain'/>
       </Link>
       <div className='flex text-[13px] gap-4 border-gray-800items-center'>
