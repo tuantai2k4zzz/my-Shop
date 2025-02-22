@@ -29,19 +29,21 @@ const getProducts = asyncHandler(async (req, res) => {
     queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, (el) => `$${el}`);
     const formateQueries = JSON.parse(queryString);
     if (queries?.title) formateQueries.title = { $regex: queries.title, $options: 'i' };
-    let queryCommandFake = Product.find(formateQueries);
+    let queryCommandFake = Product.find(formateQueries).limit(10);
     if (req.query.sort) {
         const sortBy = req.query.sort.split(',').join(' ')
-        queryCommandFake = queryCommandFake.sort(sortBy)
+        queryCommandFake = queryCommandFake.sort(sortBy).limit(10)
     }
     if (req.query.fields) {
         const fields = req.query.fields.split(',').join(' ')
-        queryCommandFake = queryCommandFake.select(fields)
+        queryCommandFake = queryCommandFake.select(fields).limit(10)
     }
-    const page = Number(req.query.page) || 1
-    const limit = Number(req.query.limit) || 2
-    const skip = (page - 1) * limit
-    queryCommandFake = queryCommandFake.skip(skip).limit(limit)
+    if(req.query.limit && req.query.page){
+        const page = Number(req.query.page) || 1
+        const limit = Number(req.query.limit) || 2
+        const skip = (page - 1) * limit
+        queryCommandFake = queryCommandFake.skip(skip).limit(limit)
+    }
     const queryCommandReal = await queryCommandFake;
     if(Object.keys(formateQueries).length === 0){
          count = queryCommandReal.length
@@ -73,7 +75,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
     })
 })
 const getAllProducts = asyncHandler(async (req, res) => {
-    const response = await Product.find()
+    const response = await Product.find().limit(10)
     return res.json({
         success: true,
         products: response

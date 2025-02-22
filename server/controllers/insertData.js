@@ -35,7 +35,9 @@ const fn = async (product) => {
             quantity: Math.floor(Math.random() * 1000),
             sold: Math.floor(Math.random() * 500),
             images: product?.images || [],
-            color
+            color,
+            thumb: product?.thumb,
+            totalRatings: Math.round(Math.random() * 5),
         });
 
     } catch (error) {
@@ -58,7 +60,8 @@ const fn2 = async (category) => {
     try {
         await Category.create({
             title: category?.cate,
-            brand: category?.brand
+            brand: category?.brand,
+            image: category.image
         })
     } catch (error) {
         console.error(`Lỗi khi thêm sản phẩm: ${error.message}`);
